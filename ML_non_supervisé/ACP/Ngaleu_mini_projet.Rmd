@@ -1,0 +1,391 @@
+---
+title: "Ngaleu_mini_projet"
+output:
+  pdf_document:
+    number_sections: true
+    toc: true
+    toc_depth: 3
+geometry: margin=2cm
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{float}
+  - \usepackage{caption}
+  - \usepackage{titlesec}
+  - \usepackage{placeins}
+  - \usepackage{amssymb}
+  - \DeclareUnicodeCharacter{2248}{\approx}
+  - \DeclareUnicodeCharacter{2212}{-}
+  - \DeclareUnicodeCharacter{2714}{\checkmark}
+  - \DeclareUnicodeCharacter{FE0F}{}
+---
+
+
+```{r, echo=FALSE, fig.width=7, fig.height=4.5, out.width="100%"}
+#En analyse de données, et contrairement au machine learning supervisé où l’objectif est de prédire une variable cible, l’analyse multivariée vise avant tout à explorer la structure des données sans réponse connue à l’avance
+```
+
+# Contexte de l’étude
+
+Dans le domaine de la production animale, l’analyse des caractéristiques de carcasse est essentielle pour évaluer la qualité de la viande, le rendement et la valorisation économique des bovins.
+Les différentes parties du bovin (viande, gras, os, carcasse) sont fortement liées entre elles et dépendent notamment du poids vif et de la race de l’animal.
+
+Cependant, la multiplicité de ces variables quantitatives rend l’analyse complexe. Il devient alors pertinent d’utiliser des méthodes statistiques multivariées, telles que l’Analyse en Composantes Principales (ACP), afin de :
+
+* résumer l’information,
+* détecter des relations entre variables,
+* comparer les individus,
+* et étudier l’influence de la race.
+
+# Problématique
+
+Comment résumer et interpréter efficacement les relations entre les différentes masses corporelles d’un bovin, tout en mettant en évidence les différences éventuelles entre les races Charolaise et Zébu ?
+
+Plus précisément :
+
+* Existe-t-il une structure commune entre les variables de poids ?
+* Quelles variables expliquent le plus la variabilité des données ?
+* La race permet-elle de distinguer des profils morphologiques différents ?
+
+# Objectifs de l’étude
+
+## Objectif général
+
+Utiliser l’Analyse en Composantes Principales (ACP) pour analyser et interpréter les relations entre les différentes masses corporelles de bovins.
+
+## Objectifs spécifiques
+
+* Réduire la dimension des données tout en conservant l’essentiel de l’information.
+* Étudier les corrélations entre les variables de poids.
+* Identifier les axes principaux expliquant la variabilité.
+* Comparer les individus selon leur race à l’aide d’une variable qualitative supplémentaire.
+* Interpréter biologiquement les résultats obtenus.
+
+# Méthodologie
+
+## Description des données
+
+Le jeu de données contient :
+
+* Variables quantitatives actives :
+
+** vif : poids vif
+** carc : poids de la carcasse
+** qsup : poids de la viande de première qualité
+** tota : poids de la viande totale
+** gras : poids du gras
+** os : poids des os
+
+* Variable qualitative supplémentaire :
+
+** race :
+
+*** 1 = Charolais
+*** 2 = Zébu
+
+La variable race n’intervient pas dans le calcul des axes mais sert à l’interprétation.
+
+## Prétraitement des données
+
+* Importation des données avec read.table()
+* Transformation de race en facteur
+* Centrage et réduction des variables quantitatives (indispensable pour l’ACP)
+
+## Méthode statistique : ACP
+
+L’ACP est appliquée sur les variables quantitatives centrées-réduites afin de :
+
+* maximiser la variance expliquée,
+* projeter les individus et les variables dans un espace de faible dimension,
+* interpréter les axes factoriels.
+
+# Analyse ACP – Code R commenté
+
+## Importation et préparation
+
+```{r, echo=FALSE, fig.width=7, fig.height=4.5, out.width="100%"}
+library(FactoMineR)
+library(factoextra)
+setwd("/drive/alumni/iut2502239/SD2/SEMESTRE4/ACP")
+bovin<-read.table("bovins.txt", header = TRUE)
+names(bovin)
+str(bovin)
+```
+
+```{r, echo=FALSE, fig.width=7, fig.height=4.5, out.width="100%"}
+# Transformation de la race en facteur
+bovin$race <- factor(bovin$race, labels = c("Charolais", "Zebu"))
+```
+
+```{r, echo=FALSE, fig.width=7, fig.height=4.5, out.width="100%"}
+# Séparation des variables
+X <- bovin[, 1:6]      # variables quantitatives
+race <- bovin$race     # variable qualitative
+```
+
+```{r, echo=FALSE, fig.width=7, fig.height=4.5, out.width="100%"}
+#Imaginez que vous voulez savoir si la taille d'une personne est liée à son poids, ou si la météo influence la vente de glaces. Ce #tableau permet de regarder d'un seul coup d'œil les liens entre plusieurs choses (ici : vif, carc, qsup, tota, gras, os ).
+par(mfrow=c(1,2))
+bovin
+pairs(X)
+```
+Interpretation : 
+
+Ce graphique nous montre quelles caractéristiques voyagent ensemble. Par exemple, on voit tout de suite que 'qsup' et 'tota' forment une ligne droite qui monte et sont extrêmement liés (ils évoluent de la même façon), alors que le gras, tota (ou gras et qsup ) fait exactement le contraire de ces deux-là cas  la pente descend cela veut dire que plus il ya de l'un, moins il ya de l'autre. Alors que la case tout en bas à droite ( os ) les points sont souvent très dispersés par rapport aux autres variables et du coup il sont pas liée. C'est un outil magique pour comprendre ce qui influence quoi en un seul coup d'œil !
+
+
+## ACP
+
+```{r, echo=FALSE, fig.width=7, fig.height=4.5, out.width="100%"}
+res.pca <- PCA(X, scale.unit = TRUE, graph = FALSE) # utiliser pour les variables quantitatives et qui sert a expliquer les variables et individu
+```
+
+```{r, echo=FALSE, fig.width=7, fig.height=4.5, out.width="100%"}
+summary(res.pca)
+```
+
+# Choix du nombre d’axes
+
+```{r, echo=FALSE, fig.width=7, fig.height=4.5, out.width="100%"}
+par(mfrow=c(1,2))
+get_eigenvalue(res.pca) # c'est pariel avec round(res.pca)
+round(res.pca$eig,2) # regarder la variable eigenvalue et cumilative  percentage of variance et du coup on ne veut pas prendre l'axe 2
+fviz_screeplot(res.pca, addlabels = TRUE, ylim = c(0, 5),choice="eigenvalue")
+
+```
+
+Interpretation : 
+
+1. Analyse des Valeurs Propres (Règle de Kaiser)
+En analysant le tableau des vecteurs propres on constate que les composant 1,2 et 3 ont des valeurs propres qui sont supérieure à 1 et que les autres composant sont inférieur a 1 cela prouve que on a besion de 3 axes pour bien résumer les variablles 
+
+2. Analyse du Pourcentage Cumulé
+
+-Axe 1 uniquement : nous expliquez 49,18 % des données. C'est peu pour conclure seul.
+-Axes 1 et 2 : Vous expliquez 76.18 % (un peu plus de la moitié).
+-Axes 1, 2 et 3 : nous expliquez 93.95 % des données ce qui résume parfaitement
+
+3. Le Critère du Coude (Cattell)
+
+On observe une chute brutale entre les dimensions 1, 2 et 3, et à partir de la 2ème dimension la pente s'adoucit considérablement 
+ce qui confirme qu'après la 3ème, l'ajout d'information supplémentaire est négligeable.
+On retiendra donc les 3 premiers axes pour l'analyse.
+
+# Interprétation du cercle des corrélations
+
+```{r, echo=FALSE, fig.width=7, fig.height=4.5, out.width="100%"}
+par(mfrow=c(1,2))
+round(res.pca$var$cor,2)
+plot(res.pca,choix="var") #~dimension 1 et 2
+plot(res.pca,axes=c(1,3),choix="var") # dimension 3 et 4
+```
+1. Dimension 1 (35,03 %) : représente  l'axe de rendement de la viande à son gras
+C'est l'axe horizontal. Il oppose deux types de performances :
+Du côté positif (à droite) : tota, qsup
+Du côté négatif (à gauche) : gras
+Plus on va à droite :plus l’animal est lourd en viande
+Interprétation : Les animaux riches en viande sont moins gras, et inversement.
+
+2. Dimension 2 (76.18 % ) : L’axe 2 est un axe de gabarit global, porté essentiellement par le poids vif et le poids de la carcasse.
+
+3. Dimension 3 (93.95 % ) : L'axe 3 représente la propotion d'os
+
+# Analyse des individus
+
+```{r, echo=FALSE, fig.width=7, fig.height=4.5, out.width="100%"}
+round(t(res.pca$ind$dist),2)
+```
+
+Interpretation : 
+Le tableau montre que l'individu 1 et 23 sont les produits les plus original ou extrême de l'échantillon, tandis que l'individu 14 est celui qui se rapproche le plus du profil moyen des produits évalués.
+
+
+# Cos² et contributions des variables 
+
+```{r, echo=FALSE, fig.width=7, fig.height=4.5, out.width="100%"}
+#POUR LES VARIABLES
+par(mfrow=c(1,2))
+round(res.pca$var$cos2,2)
+round(res.pca$var$contrib,2)
+```
+
+Règle fondamentale :
+
+* cos² proche de 1 → individu très bien représenté sur l’axe
+* cos² proche de 0 → individu mal représenté
+
+Interpretation : 
+
+1. Tableau de Gauche : La Qualité (cos^2) :
+
+Axe 1 (Dim.1) : Les variables qsup( 0.88), tota(0.94), gras(0.90) sont parfaitement représentées. Elles "vivent" sur cet axe cas c’est sur cette axe que leurs valeurs son énormes.
+
+Axe 2 (Dim.2) : Les variables vif(0.86), carc(0.64) sont parfaitement représentées.  cas c’est sur cette axe que leurs valeurs son énormes. 
+
+Axe 3 (Dim.3) : La variable os(0.93) Il est presque uniquement dédié à l'os( 0.93 ). cas c’est sur cette axe que leurs valeurs son énormes.
+
+2. Tableau de Droite : La Contribution (%) :
+
+Règle fondamentale :
+
+* Contribution élevée → individu important pour construire l’axe
+* Contribution faible → individu peu influent
+
+Seuil pratique :
+
+ConContribution supérieure à 100 / n (environ 4.34%) → contribution notable
+
+Pour la Dim.1 : Les "patrons" de l'axe sont qsup( 29.71 %), tota(31.81 %), gras(30.66 %) Ce sont eux qui ont créé cet axe. cas c’est sur cette axe que leurs valeurs son énormes.
+
+Pour la Dim.2 :  Les variables vif(53.10 %), carc(39.30 %) c’est sur cette axe que leurs valeurs son énormes.
+
+Pour la Dim.3 :  La variable os(87.12 %) c’est sur cette axe que sa valeur est énorme
+
+# Cos² et contributions des individus
+
+```{r, echo=FALSE, fig.width=7, fig.height=4.5, out.width="100%"}
+par(mfrow=c(1,2))
+round(res.pca$ind$cos2,2)
+round(res.pca$ind$contrib,2)
+```
+
+Axe 1 (Dim.1) : Les individus 22 (0.96), 23 (0.81), 3 (0.73), 6 (0.62) et 7 (0.64) sont parfaitement représentés sur cet axe (cos² élevés). Ils vivent principalement sur cet axe, car c’est sur la première composante principale que se concentre l’essentiel de leur information. Ces individus contribuent fortement à la construction de l’axe 1 et présentent des profils extrêmes associés au rendement en viande.
+
+Axe 2 (Dim.2) : Les individus 11 (0.85), 4 (0.67), 5 (0.67), 10 (0.51) et 15 (0.50) sont très bien représentés sur cet axe. Ils vivent essentiellement sur la deuxième composante principale, qui capte une part importante de leur variabilité. Ces individus sont déterminants dans la construction de l’axe 2 et traduisent des différences liées à la masse corporelle globale.
+
+Axe 3 (Dim.3) : Les individus 17 (0.51), 18 (0.50), 12 (0.47) et 19 (0.34) sont principalement représentés sur cette composante. Cet axe est essentiellement dédié à ces individus, qui possèdent des caractéristiques spécifiques non expliquées par les deux premières composantes principales.
+
+
+# Qualité de représentation des individus (Plan 1–2) &(Plan 1–3)
+
+```{r, echo=FALSE, fig.width=7, fig.height=4.5, out.width="100%"}
+## Interpreter celui de la dimension 1 et 2
+par(mfrow=c(1,2))
+plot(res.pca,choix="ind") # dimension 1 et 2
+plot(res.pca,axes=c(1,3),choix="ind") # dimension 1 et 3
+```
+
+Interpretation : 
+
+* (Plan 1–2)
+
+Le graphique des individus permet de visualiser les ressemblances entre les 23 sujets de l'étude sur un plan simplifié. Cette représentation synthétise 76,18 % de l'information totale (variance), ce qui garantit une lecture très fidèle de la réalité des données.
+Analyse des proximités : La distance entre deux points indique leur degré de similarité. Par exemple, les individus 1 et 7 présentent des profils très proches, tandis que l'individu 22 s'oppose radicalement à l'individu 1 .
+Signification des axes :
+L'axe horizontal (Dimension 1) est le plus discriminant : il explique à lui seul 49,18 % des différences constatées. Il permet de séparer les sujets en deux groupes distincts (gauche vs droite).
+L'axe vertical (Dimension 2) complète l'analyse en résultant 27,00 % de variations supplémentaires, permettant de nuancer les profils au sein des groupes précédemment identifiés.
+Structuration des groupes : On observe une segmentation nette de l'échantillon. Le groupe situé à droite (ex : 1, 7, 10, 11 ) partage des caractéristiques communes qui les opposent au groupe situé à gauche (ex : 22, 23, 19, 20 ). Cette répartition suggère l'existence de deux typologies d'individus bien distinctes dans les données étudiées.
+
+* (Plan 1–3)
+
+L'axe horizontal (Dim 1 - 49,18 %) : Il reste l'indicateur principal. Il sépare toujours distinctement les individus en deux familles : le groupe de gauche (ex: 23, 20, 22 ) s'oppose radicalement au groupe de droite (ex: 1, 7, 12 ).
+
+L'axe vertical (Dim 3 - 17,77 %) : Cet axe apporte un éclairage nouveau sur des différences plus subtiles que les premiers axes n'avaient pas révélées.
+
+* En haut : Des individus comme les 12, 15 et 21 se distinguent par une caractéristique spécifique commune.
+* En bas : Des individus comme le 19, 18 et 1 présentent le profil inverse sur ce critère.
+
+Observations clés :
+* L'individu 12 est très particulier : il combine des valeurs fortes sur la Dimension 1 (très à droite) et sur la Dimension 3 (très en haut).
+* À l'inverse, l'individu 19 se trouve à l'opposé complet (à gauche et en bas).
+
+
+# PCA − Biplot
+
+Le biplot combine sur le même graphique :
+
+* Les individus (points)
+* Les variables (flèches)
+
+Règle empirique :
+
+Si les deux premières composantes principales expliquent plus de 70 % de l’inertie totale, alors le plan factoriel (Dim 1, Dim 2) capture la majorité de l’information et le biplot est fiable pour interpréter simultanément individus et variables.
+
+Logique :
+
+Si Dim 1 + Dim 2 < 50 %
+→ beaucoup d’information reste sur les axes supérieurs
+→ biplot en 2D serait trompeur, on perdrait l’essentiel
+
+Si Dim 1 + Dim 2 > 70 %
+→ plan 2D représente plus des 2/3 de l’information
+→ les distances et angles sont fiables pour l’interprétation
+
+Dans mon cas :
+
+Dim 1 = 49,18 %
+Dim 2 = 27,00 %
+Total = 76,18 % ✔️
+
+biplot est donc parfaitement justifié.
+
+
+```{r, echo=FALSE, fig.width=7, fig.height=4.5, out.width="100%"}
+fviz_pca_biplot(res.pca, repel = TRUE,
+                col.var = "red",
+                col.ind = "blue")
+
+```
+
+Interpretation : 
+
+En haut (Le coin du Poids et de la Matière) : On y trouve les flèches vif (Poids Vif) et carc (Poids Carcasse).
+
+* Individus associés : 11, 20, 9.
+* Interprétation : C'est le pôle du rendement en masse. L'individu 11 est l'exemple type : il est situé tout en haut, ce qui signifie qu'il combine un poids vif élevé et une carcasse très lourde. Ces animaux sont massifs.
+
+
+À droite (Le coin de la Qualité Pure) : On y trouve les flèches tota et qsup (Qualité Supérieure).
+
+* Individus associés : 6, 8, 12, 1.
+* Interprétation : Ce sont les animaux qui obtiennent les meilleures notes globales, indépendamment de leur poids pur. Ils sont situés à l'opposé du gras, ce qui indique une viande de haute qualité. Le 12 et le 6 sont partis des exemples.
+
+À gauche (Le coin du Gras) : On y trouve la flèche gras.
+
+* Individus associés : 23, 22, 19, 21.
+* Interprétation : Ces profils sont caractérisés par une adiposité excessive. Étant à l'opposé horizontal de tota, le gras est le principal facteur pénalisant pour la note finale dans ce concours.
+
+En bas (Le coin de l'Ossature) : On y trouve la flèche os
+
+* Individus associés : 5, 10, 15, 16.
+* Interprétation : Ce groupe s'oppose verticalement au groupe vif / carc. Ce sont des animaux qui ont proportionnellement plus d'os ou qui manquent de développement musculaire (poids carcasse plus faible).
+
+
+# Ajoute d'une variable qualitative pour savoir les races 
+
+
+```{r, echo=FALSE, fig.width=7, fig.height=4.5, out.width="100%"}
+fviz_pca_ind(res.pca,
+             habillage = as.factor(race), # On force le format facteur
+             addEllipses = TRUE,
+             repel = TRUE)
+
+```
+
+Interpretation : 
+
+Deux groupes bien séparés On voit tout de suite que les points ne se mélangent pas.
+
+* Les Charolais (en rouge) sont tous rassemblés à droite.
+* Les Zébus (en bleu) sont tous rassemblés à gauche. Cela veut dire que ces deux races sont très différentes l'une de l'autre.
+
+En étant à droite, les Charolais se trouvent du côté de la "Performance" (meilleure qualité de viande et meilleur score total, comme vu sur le graphique précédent).
+
+En étant à gauche, les Zébus se trouvent du côté du "Gras" et des notes plus faibles.
+
+Par contre le haut et le bas montre simplement les petites différences entre les animaux d'une même race (par exemple, certains sont plus gros ou plus osseux que d'autres), mais c'est moins marquant que la différence gauche/droite.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
